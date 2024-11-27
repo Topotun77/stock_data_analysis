@@ -21,4 +21,4 @@
 ![Static Badge](https://img.shields.io/badge/build-passing-brightgreen)
 -->
 ### Скриншот интерфейса:
-![img01](https://github.com/Topotun77/stock_data_analysis/ScreenShots/n001.JPG?raw=true)
+![img01](https://github.com/Topotun77/stock_data_analysis/blob/master/ScreenShots/n001.jpg?raw=true)
