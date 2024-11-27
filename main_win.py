@@ -1,6 +1,7 @@
 import data_download as dd
 import data_plotting as dplt
 import tkinter as tk
+from tkinter import ttk
 from tkinter.constants import *
 from tkinter import messagebox as mb
 
@@ -89,7 +90,8 @@ def create_win():
     txt = 'GOOGL'
     tik_entry.insert(0, txt)
 
-    period_entry = tk.Entry(frame2, width=50)
+    list_period = ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
+    period_entry = ttk.Combobox(frame2, width=50, values=list_period)
     period_entry.grid(row=1, column=1, sticky=W)
     txt = '1mo'
     period_entry.insert(0, txt)
