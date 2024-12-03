@@ -3,6 +3,16 @@ import pandas as pd
 from pandas import DataFrame
 
 
+def export_data_to_csv(data: DataFrame, filename: str | None = None, ticker: str = ''):
+    if filename is None:
+        filename = f"{ticker}_{str(data.index[0]).split()[0]}-{str(data.index[-1]).split()[0]}_data.csv"
+    try:
+        data.to_csv(filename, sep=',', encoding='utf-8')
+        return True, f'{filename}'
+    except Exception as er:
+        return False, er.args
+
+
 def notify_if_strong_fluctuations(data: DataFrame, threshold: float, col='Close') -> str | None:
     """
     Метод анализирует данные и уведомляет пользователя, если цена акций колебалась
