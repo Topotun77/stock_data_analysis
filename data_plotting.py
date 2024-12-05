@@ -52,6 +52,16 @@ def calculate_and_display_average_price(data: DataFrame, col='Close'):
     return data[col].mean(axis=0)
 
 
+def MACD_color(data):
+    color_list = []
+    for i in range(0, len(data)):
+        if data['MACDh_12_26_9'][i] > data['MACDh_12_26_9'][i - 1]:
+            color_list.append(True)
+        else:
+            color_list.append(False)
+    return color_list
+
+
 def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: str | None | bool = None) -> str:
     """
     Метод создает график по данным и сохраняет его на диск
@@ -63,43 +73,68 @@ def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: st
                      формироваться автоматически
     :return: Сообщение с результатом выполнения функции
     """
-    plt.figure(figsize=(10, 8))
-    plt.subplot(2, 1, 1)
+    plt.figure(figsize=(8, 8))
+    ax1 = plt.subplot2grid(shape=(10, 10), loc=(0, 0), rowspan=4, colspan=10)
 
     if 'Date' not in data:
         if pd.api.types.is_datetime64_any_dtype(data.index):
             dates = data.index.to_numpy()
-            plt.plot(dates, data['Close'].values, label='Close Price')
-            plt.plot(dates, data['Moving_Average'].values, label='Moving Average')
+            ax1.plot(dates, data['Close'].values, label='Close Price')
+            ax1.plot(dates, data['Moving_Average'].values, label='Moving Average')
         else:
             return "Информация о дате отсутствует или не имеет распознаваемого формата."
     else:
         if not pd.api.types.is_datetime64_any_dtype(data['Date']):
             data['Date'] = pd.to_datetime(data['Date'])
-        plt.plot(data['Date'], data['Close'], label='Close Price')
-        plt.plot(data['Date'], data['Moving_Average'], label='Moving Average')
+        ax1.plot(data['Date'], data['Close'], label='Close Price')
+        ax1.plot(data['Date'], data['Moving_Average'], label='Moving Average')
 
-    plt.title(f"{ticker} Цена акций с течением времени")
-    plt.xlabel("Дата")
-    plt.ylabel("Цена")
-    plt.legend()
+    ax1.set_title(f"{ticker} Цена акций с течением времени")
+    ax1.set_xlabel("Дата")
+    ax1.set_ylabel("Цена")
+    ax1.legend()
 
-    plt.subplot(2, 1, 2)
-    if 'Date' not in data:
-        if pd.api.types.is_datetime64_any_dtype(data.index):
-            dates = data.index.to_numpy()
-            plt.plot(dates, data['RSI'].values, label='RSI')
+    try:
+        ax2 = plt.subplot2grid((10, 10), (4, 0), rowspan=3, colspan=10)
+        if 'Date' not in data:
+            if pd.api.types.is_datetime64_any_dtype(data.index):
+                dates = data.index.to_numpy()
+                ax2.plot(dates, data['RSI_14'].values, label='RSI', linewidth=0.5)
+            else:
+                return "Информация о дате отсутствует или не имеет распознаваемого формата."
         else:
-            return "Информация о дате отсутствует или не имеет распознаваемого формата."
-    else:
-        if not pd.api.types.is_datetime64_any_dtype(data['Date']):
-            data['Date'] = pd.to_datetime(data['Date'])
-        plt.plot(data['Date'], data['RSI'].values, label='RSI')
+            if not pd.api.types.is_datetime64_any_dtype(data['Date']):
+                data['Date'] = pd.to_datetime(data['Date'])
+            ax2.plot(data['Date'], data['RSI_14'].values, label='RSI', linewidth=0.5)
+        ax2.set_ylabel("RSI")
+        ax2.legend()
+    except:
+        pass
 
-    plt.title(f"{ticker} RSI")
-    plt.xlabel("Дата")
-    plt.ylabel("Индекс относительной силы")
-    plt.legend()
+    try:
+        ax3 = plt.subplot2grid((10, 10), (7, 0), rowspan=3, colspan=10)
+        data['positive'] = MACD_color(data)
+        if 'Date' not in data:
+            if pd.api.types.is_datetime64_any_dtype(data.index):
+                dates = data.index.to_numpy()
+                ax3.plot(dates, data['MACD_12_26_9'].values, label='MACD', color='blue', linewidth=0.5)
+                ax3.plot(dates, data['MACDs_12_26_9'].values, label='Signal', color='red', linewidth=0.5)
+                ax3.bar(data.index, 'MACDh_12_26_9', data=data, label='Vol',
+                        color=data.positive.map({True: 'g', False: 'r'}), width=1, alpha=0.8)
+            else:
+                return "Информация о дате отсутствует или не имеет распознаваемого формата."
+        else:
+            if not pd.api.types.is_datetime64_any_dtype(data['Date']):
+                data['Date'] = pd.to_datetime(data['Date'])
+            ax3.plot(data['Date'], data['MACD_12_26_9'].values, label='MACD', color='blue', linewidth=0.5)
+            ax3.plot(data['Date'], data['MACDs_12_26_9'].values, label='Signal', color='red', linewidth=0.5)
+            ax3.bar(data.index, 'MACDh_12_26_9', data=data, label='Vol',
+                    color=data.positive.map({True: 'g', False: 'r'}), width=1, alpha=0.8)
+        ax3.axhline(0, color='black', linewidth=0.5, alpha=0.5)
+        ax3.set_ylabel("MACD")
+        ax3.legend()
+    except:
+        pass
 
     if filename is None:
         filename = f"{ticker}_{period}_stock_price_chart.png"

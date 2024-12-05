@@ -35,8 +35,6 @@ def add_rsi_macd(data: DataFrame) -> DataFrame:
     :param data: DataFrame данные
     :return: Обновленные данные в формате DataFrame
     """
-    data['RSI'] = ta.rsi(data['Close'])
-    macd = ta.macd(data['Close'])
-    if not macd is None:
-        data = merge(data, macd, left_index=True, right_index=True)
+    data.ta.rsi(close='close', append=True)
+    data.ta.macd(close='close', fast=12, slow=26, signal=9, append=True)
     return data
