@@ -1,4 +1,11 @@
-FLUCTUATIONS_DEFAULT = 15
+FLUCTUATIONS_DEFAULT = 25
+
+ICON_CALC = './Media/calc.png'
+ICON_CHART = './Media/chart.png'
+ICON_SAVE = './Media/save.png'
+
+LIST_TIK = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'BTC-USD']
+LIST_PERIOD = ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
 
 INFO = """Добро пожаловать в инструмент получения и построения графиков биржевых данных.
 

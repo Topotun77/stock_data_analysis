@@ -26,6 +26,9 @@ def main():
     # Добавить скользящее среднее значение к данным
     stock_data = dd.add_moving_average(stock_data)
 
+    # Добавить дополнительные технические индикаторы: RSI и MACD
+    stock_data = dd.add_rsi_macd(stock_data)
+
     # Построить график
     print(dplt.create_and_save_plot(stock_data, ticker, period))
 

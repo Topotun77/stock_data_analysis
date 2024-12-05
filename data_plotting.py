@@ -4,6 +4,13 @@ from pandas import DataFrame
 
 
 def export_data_to_csv(data: DataFrame, filename: str | None = None, ticker: str = ''):
+    """
+    Экспортировать данные в CSV формате
+    :param data: Объект класса DataFrame с данными для экспорта.
+    :param filename: Имя файла для экспорта, по умолчанию формируется автоматически.
+    :param ticker: Название тикета.
+    :return: Картеж (успех/неудача, сообщение пользователю)
+    """
     if filename is None:
         filename = f"{ticker}_{str(data.index[0]).split()[0]}-{str(data.index[-1]).split()[0]}_data.csv"
     try:
@@ -45,7 +52,7 @@ def calculate_and_display_average_price(data: DataFrame, col='Close'):
     return data[col].mean(axis=0)
 
 
-def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: str | None = None) -> str:
+def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: str | None | bool = None) -> str:
     """
     Метод создает график по данным и сохраняет его на диск
     :param data: Объект класса DataFrame с данными для расчета.
@@ -56,7 +63,8 @@ def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: st
                      формироваться автоматически
     :return: Сообщение с результатом выполнения функции
     """
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(10, 8))
+    plt.subplot(2, 1, 1)
 
     if 'Date' not in data:
         if pd.api.types.is_datetime64_any_dtype(data.index):
@@ -76,9 +84,30 @@ def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: st
     plt.ylabel("Цена")
     plt.legend()
 
+    plt.subplot(2, 1, 2)
+    if 'Date' not in data:
+        if pd.api.types.is_datetime64_any_dtype(data.index):
+            dates = data.index.to_numpy()
+            plt.plot(dates, data['RSI'].values, label='RSI')
+        else:
+            return "Информация о дате отсутствует или не имеет распознаваемого формата."
+    else:
+        if not pd.api.types.is_datetime64_any_dtype(data['Date']):
+            data['Date'] = pd.to_datetime(data['Date'])
+        plt.plot(data['Date'], data['RSI'].values, label='RSI')
+
+    plt.title(f"{ticker} RSI")
+    plt.xlabel("Дата")
+    plt.ylabel("Индекс относительной силы")
+    plt.legend()
+
     if filename is None:
         filename = f"{ticker}_{period}_stock_price_chart.png"
 
-    plt.savefig(filename)
+    msg = ''
+    if filename:
+        plt.savefig(filename)
+        msg = f"График сохранен как {filename}"
+    plt.tight_layout()
     plt.show()
-    return f"График сохранен как {filename}"
+    return msg
