@@ -55,7 +55,7 @@ def calculate_and_display_average_price(data: DataFrame, col='Close'):
 def MACD_color(data):
     color_list = []
     for i in range(0, len(data)):
-        if data['MACDh_12_26_9'][i] > data['MACDh_12_26_9'][i - 1]:
+        if data.iloc[i]['MACDh_12_26_9'] > data.iloc[i-1]['MACDh_12_26_9']:
             color_list.append(True)
         else:
             color_list.append(False)
@@ -74,7 +74,7 @@ def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: st
     :return: Сообщение с результатом выполнения функции
     """
     plt.figure(figsize=(8, 8))
-    ax1 = plt.subplot2grid(shape=(10, 10), loc=(0, 0), rowspan=4, colspan=10)
+    ax1 = plt.subplot2grid(shape=(11, 10), loc=(0, 0), rowspan=5, colspan=10)
 
     if 'Date' not in data:
         if pd.api.types.is_datetime64_any_dtype(data.index):
@@ -92,10 +92,11 @@ def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: st
     ax1.set_title(f"{ticker} Цена акций с течением времени")
     ax1.set_xlabel("Дата")
     ax1.set_ylabel("Цена")
+    ax1.grid()
     ax1.legend()
 
     try:
-        ax2 = plt.subplot2grid((10, 10), (4, 0), rowspan=3, colspan=10)
+        ax2 = plt.subplot2grid((11, 10), (5, 0), rowspan=3, colspan=10)
         if 'Date' not in data:
             if pd.api.types.is_datetime64_any_dtype(data.index):
                 dates = data.index.to_numpy()
@@ -107,12 +108,13 @@ def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: st
                 data['Date'] = pd.to_datetime(data['Date'])
             ax2.plot(data['Date'], data['RSI_14'].values, label='RSI', linewidth=0.5)
         ax2.set_ylabel("RSI")
-        ax2.legend()
+        ax2.grid()
+        # ax2.legend()
     except:
         pass
 
     try:
-        ax3 = plt.subplot2grid((10, 10), (7, 0), rowspan=3, colspan=10)
+        ax3 = plt.subplot2grid((11, 10), (8, 0), rowspan=3, colspan=10)
         data['positive'] = MACD_color(data)
         if 'Date' not in data:
             if pd.api.types.is_datetime64_any_dtype(data.index):
@@ -132,6 +134,7 @@ def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: st
                     color=data.positive.map({True: 'g', False: 'r'}), width=1, alpha=0.8)
         ax3.axhline(0, color='black', linewidth=0.5, alpha=0.5)
         ax3.set_ylabel("MACD")
+        ax3.grid()
         ax3.legend()
     except:
         pass
