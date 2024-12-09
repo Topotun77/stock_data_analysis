@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+# from matplotlib import style
 import pandas as pd
 from pandas import DataFrame
 
@@ -62,7 +63,8 @@ def MACD_color(data):
     return color_list
 
 
-def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: str | None | bool = None) -> str:
+def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: str | None | bool = None,
+                         style='default') -> str:
     """
     Метод создает график по данным и сохраняет его на диск
     :param data: Объект класса DataFrame с данными для расчета.
@@ -71,8 +73,10 @@ def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: st
                    ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
     :param filename: Имя файла для сохранения изображения с графиком, по умолчанию имя файла будет
                      формироваться автоматически
+    :param style: Стиль графика.
     :return: Сообщение с результатом выполнения функции
     """
+    plt.style.use(style)
     plt.figure(figsize=(8, 8))
     ax1 = plt.subplot2grid(shape=(11, 10), loc=(0, 0), rowspan=5, colspan=10)
 
@@ -92,7 +96,7 @@ def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: st
     ax1.set_title(f"{ticker} Цена акций с течением времени")
     ax1.set_xlabel("Дата")
     ax1.set_ylabel("Цена")
-    ax1.grid()
+    # ax1.grid()
     ax1.legend()
 
     try:
@@ -108,7 +112,7 @@ def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: st
                 data['Date'] = pd.to_datetime(data['Date'])
             ax2.plot(data['Date'], data['RSI_14'].values, label='RSI', linewidth=0.5)
         ax2.set_ylabel("RSI")
-        ax2.grid()
+        # ax2.grid()
         # ax2.legend()
     except:
         pass
@@ -134,7 +138,7 @@ def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: st
                     color=data.positive.map({True: 'g', False: 'r'}), width=1, alpha=0.8)
         ax3.axhline(0, color='black', linewidth=0.5, alpha=0.5)
         ax3.set_ylabel("MACD")
-        ax3.grid()
+        # ax3.grid()
         ax3.legend()
     except:
         pass

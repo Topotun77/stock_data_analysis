@@ -16,7 +16,7 @@ from tkcalendar import DateEntry
 from pandas import DataFrame
 
 
-def image_to_icon(file: str, min_x=20, min_y=20) -> ImageTk.PhotoImage:
+def image_to_icon(file: str, min_x=20, min_y=20) -> ImageTk.PhotoImage | None:
     """
     Изменение размера картинки для иконки.
     :param file: Имя файла.
@@ -24,12 +24,15 @@ def image_to_icon(file: str, min_x=20, min_y=20) -> ImageTk.PhotoImage:
     :param min_y: Размер по вертикали.
     :return: Объект ImageTk.PhotoImage.
     """
-    im = Image.open(file)
-    im = im.resize((min_x, min_y))
+    try:
+        im = Image.open(file)
+        im = im.resize((min_x, min_y))
+    except:
+        return None
     return ImageTk.PhotoImage(im)
 
 
-def query_data(ticker: str, period: str = '1mo', interval: str = '1d',
+def query_data(ticker: str, period: str = PERIOD_DEFAULT, interval: str = INTERVAL_DEFAULT,
                date_start=None, date_end=None) -> DataFrame:
     """
     Запрос данных с Yahoo Finance с использованием фреймворка yfinance
@@ -134,10 +137,10 @@ class Ticker:
                                                "при котором следует уведомлять пользователя (в %):", justify=RIGHT)
         self.lab7.grid(row=3, column=0, sticky=E)
 
-        self.lab8 = tk.Label(self.frame2, text="Дата начала периода   ", justify=CENTER)
+        self.lab8 = tk.Label(self.frame2, text="Дата начала периода:   ", justify=CENTER)
         self.lab8.grid(row=4, column=0, sticky=E)
 
-        self.lab9 = tk.Label(self.frame2, text="   Дата окончания периода", justify=CENTER)
+        self.lab9 = tk.Label(self.frame2, text="   Дата окончания периода:", justify=CENTER)
         self.lab9.grid(row=4, column=1, sticky=W)
 
         self.tik_entry = ttk.Combobox(self.frame2, width=50, values=LIST_TIK)
@@ -159,22 +162,32 @@ class Ticker:
         self.interval_entry.insert(0, self.interval)
 
         validate_digit_command = self.win.register(self._validate_digit_input)
-        self.fluctuations_entry = tk.Entry(self.frame2, width=20, validate='key',
+        self.fluctuations_entry = tk.Entry(self.frame2, width=10, validate='key',
                                            validatecommand=(validate_digit_command, '%P'))
         self.fluctuations_entry.grid(row=3, column=1, sticky=W, padx=2)
         self.fluctuations_entry.insert(0, str(FLUCTUATIONS_DEFAULT))
 
-        self.data_start_entry = DateEntryNone(self.frame2, borderwidth=2, date_pattern="dd-mm-yyyy")
+        self.data_start_entry = DateEntryNone(self.frame2, borderwidth=2, date_pattern="dd-mm-y")
         self.data_start_entry.grid(row=5, column=0, sticky=E, padx=20)
         self.data_start_entry.bind("<<DateEntrySelected>>", self._set_table)
         self.data_start = None
         self.data_start_entry.delete(0, END)
 
-        self.data_end_entry = DateEntryNone(self.frame2, borderwidth=2, date_pattern="dd-mm-yyyy")
+        self.data_end_entry = DateEntryNone(self.frame2, borderwidth=2, date_pattern="dd-mm-y")
         self.data_end_entry.grid(row=5, column=1, sticky=W, padx=20)
         self.data_end_entry.bind("<<DateEntrySelected>>", self._set_table)
         self.data_end = None
         self.data_end_entry.delete(0, END)
+
+        self.frame1 = tk.Frame(self.frame2)
+        self.frame1.grid(row=6, column=0)
+        self.lab10 = tk.Label(self.frame1, text='Стиль графиков: ')
+        self.lab10.grid(row=0, column=0, sticky=W, padx=2, pady=1)
+        style_list = [x for x in plt.style.available if x[0] != '_']
+        self.style_entry = ttk.Combobox(self.frame1, width=35, values=style_list)
+        self.style_entry.grid(row=0, column=1, sticky=E, padx=2, pady=1)
+        style = list(filter(lambda x: "seaborn" in x, style_list))[0]
+        self.style_entry.insert(0, style)
 
         self.icon_chart = image_to_icon(ICON_CHART)
         self.button_plot = tk.Button(self.frame2,
@@ -182,16 +195,16 @@ class Ticker:
                                      command=self.button_plot_click,
                                      image=self.icon_chart,
                                      compound=LEFT)
-        self.button_plot.grid(row=6, column=0, padx=5, pady=5)
+        self.button_plot.grid(row=6, column=1, padx=5, pady=5)
         # self.button_plot.bind('<Return>', self.button_plot_click)
 
         self.icon_mean = image_to_icon(ICON_CALC)
         self.button_mean = tk.Button(self.frame2,
-                                     text=" Посчитать среднюю цену на закрытие ", #width=35, height=2,
+                                     text=" Посчитать среднюю цену на закрытие ",
                                      command=self.button_mean_click,
                                      image=self.icon_mean,
                                      compound=LEFT)
-        self.button_mean.grid(row=6, column=1, padx=5, pady=5)
+        self.button_mean.grid(row=3, column=1, padx=5, pady=5, sticky=E)
 
         ticker = self.tik_entry.get().upper()
         period = self.period_entry.get()
@@ -320,7 +333,8 @@ class Ticker:
         Запрос данных и печать графика
         """
         self._set_table()
-        reply = dplt.create_and_save_plot(self.stock_data, self.ticker, self.period, filename=False)
+        style = self.style_entry.get()
+        reply = dplt.create_and_save_plot(self.stock_data, self.ticker, self.period, filename=False, style=style)
         if reply:
             mb.showinfo(message=reply, title='Инфо')
 
