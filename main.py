@@ -1,6 +1,8 @@
 import math
 import data_download as dd
 import data_plotting as dplt
+import data_export as dexp
+import data_processing as dp
 
 
 def main():
@@ -33,7 +35,7 @@ def main():
     print(dplt.create_and_save_plot(stock_data, ticker, period))
 
     # Найти среднюю цену закрытия
-    mean_close = dplt.calculate_and_display_average_price(stock_data)
+    mean_close = dd.calculate_and_display_average_price(stock_data)
     if math.isnan(mean_close):
         print('Не удалось определить среднюю цену закрытия.')
     else:
@@ -41,12 +43,12 @@ def main():
 
     # Проверить колебание цены закрытия за выбранный период
     threshold = float(input('Введите значение порога колебания цены, при котором следует уведомлять пользователя: '))
-    message = dplt.notify_if_strong_fluctuations(stock_data, threshold)
+    message = dp.notify_if_strong_fluctuations(stock_data, threshold)
     if message:
         print(message)
 
     # Экспортировать данные в CSV формате
-    err = dplt.export_data_to_csv(stock_data, ticker=ticker)
+    err = dexp.export_data_to_csv(stock_data, ticker=ticker)
     if not err[0]:
         print('Ошибка! ' + err[1])
     else:

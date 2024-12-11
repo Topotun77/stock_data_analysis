@@ -1,5 +1,7 @@
-# import os
+# from os import path
 # import sys
+from datetime import date
+
 import matplotlib.pyplot as plt
 
 # Значение по умолчанию порога колебания цен
@@ -11,9 +13,9 @@ ICON_CHART = './Media/chart.png'
 ICON_SAVE = './Media/save.png'
 
 # TODO Для компиляции с помощью auto-py-to-exe раскомментировать импорты и заменить строки выше на:
-# ICON_CALC = os.path.join(sys._MEIPASS, './Media/calc.png')
-# ICON_CHART = os.path.join(sys._MEIPASS, './Media/chart.png')
-# ICON_SAVE = os.path.join(sys._MEIPASS, './Media/save.png')
+# ICON_CALC = path.join(sys._MEIPASS, './Media/calc.png')
+# ICON_CHART = path.join(sys._MEIPASS, './Media/chart.png')
+# ICON_SAVE = path.join(sys._MEIPASS, './Media/save.png')
 
 # Список и значение по умолчанию периодов для данных
 LIST_TIK = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'BTC-USD']
@@ -28,6 +30,17 @@ PERIOD_DEFAULT = '3mo'
 LIST_INTERVAL = ['1m', '2m', '5m', '15m', '30m', '60m', '90m', '1h', '1d', '5d', '1wk', '1mo', '3mo']
 INTERVAL_DEFAULT = '1d'
 INTERVAL_NOT_TIME = ['1d', '5d', '1wk', '1mo', '3mo']
+
+# Список финансовых кризисов
+FINANCIAL_CRISIS_LIST = [
+    (date(2007, 12, 1), date(2009, 6, 1)),
+    (date(2001, 3, 1), date(2001, 11, 1)),
+    (date(1990, 8, 1), date(1991, 2, 1)),
+    (date(1981, 7, 1), date(1982, 11, 1)),
+    (date(1980, 1, 1), date(1980, 7, 1)),
+    (date(1973, 12, 1), date(1975, 2, 1)),
+    (date(1969, 12, 1), date(1970, 11, 1)),
+]
 
 # Стили графиков (не используется)
 # GRID_LIST = ['Solarize_Light2', 'bmh', 'classic', 'dark_background', 'fast', 'fivethirtyeight', 'ggplot', 'grayscale',

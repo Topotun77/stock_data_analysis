@@ -25,8 +25,13 @@
 • Добавлен выбор интервала данных.  
 • Переопределены методы `parse_date(self)`, `__init__(self)` и `_validate_date(self)` класса `ateEntry` из модуля `tkcalendar` с целью возможности ввода пустых дат.  
 • Добавлен выбор конкретных дат периода расчета.  
-• **(NEW)** Добавлен исполняемый файл в папку [output](https://github.com/Topotun77/stock_data_analysis/tree/master/output).  
-• **(NEW)** Добавлена возможность выбора стиля оформления графиков.  
+• Добавлен исполняемый файл в папку [output](https://github.com/Topotun77/stock_data_analysis/tree/master/output).  
+• Добавлена возможность выбора стиля оформления графиков.  
+• **(NEW)** Изменена структура проекта (функции разнесены по модулям, построение графиков разбито на отдельные составляющие).  
+• **(NEW)** Подписаны окна с графиками.  
+• **(NEW)** Добавлен список финансовых кризисов с 1969 года с возможностью отметки их на любом графике.  
+• **(NEW)** Добавлена возможность вывода на график любых столбцов по списку.  
+• **(NEW)** Добавлен расчет ATR индикатора (Average True Range - средний истинный диапазон) с визуализацией полученных результатов.  
 
 Для консольной версии запустите `main.py`  
 Для GUI-версии запустите `main_win.py`  
@@ -34,11 +39,17 @@
 ### Окно приветствия - информация о приложении:
 ![img01](https://github.com/Topotun77/stock_data_analysis/blob/master/ScreenShots/n001.jpg?raw=true)
 ### Меню и интерфейс приложения:
-![img01](https://github.com/Topotun77/stock_data_analysis/blob/master/ScreenShots/n005.jpg?raw=true)
+![img02](https://github.com/Topotun77/stock_data_analysis/blob/master/ScreenShots/n005.jpg?raw=true)
 ### График с RSI и MACD (исторический момент - 05.12.2024 стоимость биткойна обновила исторический максимум, превысив $100 тыс.):
-![img01](https://github.com/Topotun77/stock_data_analysis/blob/master/ScreenShots/n006.jpg?raw=true)
+![img03](https://github.com/Topotun77/stock_data_analysis/blob/master/ScreenShots/n006.jpg?raw=true)
 ### Сообщение в случае превышения порога уведомления о разнице цен:
-![img01](https://github.com/Topotun77/stock_data_analysis/blob/master/ScreenShots/n004.jpg?raw=true)
+![img04](https://github.com/Topotun77/stock_data_analysis/blob/master/ScreenShots/n004.jpg?raw=true)
+### Визуализация данных с отметками финансовых кризисов:
+![img05](https://github.com/Topotun77/stock_data_analysis/blob/master/ScreenShots/n007.jpg?raw=true)
+### Индикаторы ATR и MACD:
+![img06](https://github.com/Topotun77/stock_data_analysis/blob/master/ScreenShots/n008.jpg?raw=true)
+### Другой сьиль оформления графика:
+![img07](https://github.com/Topotun77/stock_data_analysis/blob/master/ScreenShots/n009.jpg?raw=true)
 
 ### Консольный вывод приложения:
 ```

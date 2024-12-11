@@ -1,59 +1,15 @@
 import matplotlib.pyplot as plt
-# from matplotlib import style
 import pandas as pd
+from matplotlib import pylab
 from pandas import DataFrame
+from constants import FINANCIAL_CRISIS_LIST
+from data_processing import date_start_end
 
 
-def export_data_to_csv(data: DataFrame, filename: str | None = None, ticker: str = ''):
+def MACD_color(data: DataFrame):
     """
-    Экспортировать данные в CSV формате
-    :param data: Объект класса DataFrame с данными для экспорта.
-    :param filename: Имя файла для экспорта, по умолчанию формируется автоматически.
-    :param ticker: Название тикета.
-    :return: Картеж (успех/неудача, сообщение пользователю)
+    Составление таблицы цветов для прорисовки графика MACD
     """
-    if filename is None:
-        filename = f"{ticker}_{str(data.index[0]).split()[0]}-{str(data.index[-1]).split()[0]}_data.csv"
-    try:
-        data.to_csv(filename, sep=',', encoding='utf-8')
-        return True, f'{filename}'
-    except Exception as er:
-        return False, er.args
-
-
-def notify_if_strong_fluctuations(data: DataFrame, threshold: float, col='Close') -> str | None:
-    """
-    Метод анализирует данные и уведомляет пользователя, если цена акций колебалась
-    более чем на заданный процент за период.
-    :param data: Объект класса DataFrame с данными для расчета.
-    :param threshold: Порог превышения, при котором следует уведомлять пользователя
-    :param col: Столбец для подсчета колебания
-    :return: Уведомление пользователю
-    """
-    max_value = data[col].max(axis=0)
-    min_value = data[col].min(axis=0)
-    price_fluctuation = (max_value - min_value) / min_value * 100
-    if price_fluctuation > threshold:
-        return (f'Цена акций колебалась более чем на {threshold} % за выбранный период.\n'
-                f'Максимальная цена: {max_value}\n'
-                f'Минимальная цена: {min_value}\n'
-                f'Колебание составило: {price_fluctuation:.2f} %')
-    else:
-        return None
-
-
-def calculate_and_display_average_price(data: DataFrame, col='Close'):
-    """
-    Расчет и вывод среднего за выбранный период значения по столбцу -
-    среднее на момент закрытия торгов.
-    :param data: Объект класса DataFrame с данными для расчета.
-    :param col: Столбец, по которому следует рассчитать среднее.
-    :return: Среднее по столбцу
-    """
-    return data[col].mean(axis=0)
-
-
-def MACD_color(data):
     color_list = []
     for i in range(0, len(data)):
         if data.iloc[i]['MACDh_12_26_9'] > data.iloc[i-1]['MACDh_12_26_9']:
@@ -63,10 +19,130 @@ def MACD_color(data):
     return color_list
 
 
-def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: str | None | bool = None,
-                         style='default') -> str:
+def mark_financial_crises(ax: plt.Axes, date_start=None, date_end=None):
     """
-    Метод создает график по данным и сохраняет его на диск
+    Разметить финансовые кризисы на графике (серые зоны).
+    :param ax: Объект Axes отдельного (вспомогательного) графика
+    :param date_start: Дата начала разметки
+    :param date_end: Дата окончания разметки
+    """
+    for date_per in FINANCIAL_CRISIS_LIST:
+        if date_per[1] >= date_start.date() and date_per[0] <= date_end.date():
+            ax.axvspan(date_per[0], date_per[1], alpha=0.3, color='grey')
+
+
+def create_basic_chart(data: DataFrame, ticker: str, ax: plt.Axes):
+    """
+    Метод создает основной график по данным
+    :param data: Объект класса DataFrame с данными для расчета.
+    :param ticker: Название тикета, может принимать значения ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA']
+    :param ax: Объект Axes отдельного (вспомогательного) графика
+    :return: None | error
+    """
+    if 'Date' not in data:
+        if pd.api.types.is_datetime64_any_dtype(data.index):
+            dates = data.index.to_numpy()
+            ax.plot(dates, data['Close'].values, label='Close Price', color='blue', linewidth=0.8)
+            ax.plot(dates, data['Moving_Average'].values, label='Moving Average', color='red', linewidth=0.8)
+        else:
+            return "Информация о дате отсутствует или не имеет распознаваемого формата."
+    else:
+        if not pd.api.types.is_datetime64_any_dtype(data['Date']):
+            data['Date'] = pd.to_datetime(data['Date'])
+        ax.plot(data['Date'], data['Close'], label='Close Price', color='blue', linewidth=0.8)
+        ax.plot(data['Date'], data['Moving_Average'], label='Moving Average', color='red', linewidth=0.8)
+
+    ax.set_title(f"{ticker} Цена акций с течением времени")
+    ax.set_xlabel("Дата")
+    ax.set_ylabel("Цена")
+    ax.legend()
+
+
+def create_RSI_chart(data: DataFrame, ax: plt.Axes):
+    """
+    Метод создает RSI график по данным
+    :param data: Объект класса DataFrame с данными для расчета.
+    :param ax: Объект Axes отдельного (вспомогательного) графика
+    :return: None | error
+    """
+    try:
+        if 'Date' not in data:
+            if pd.api.types.is_datetime64_any_dtype(data.index):
+                dates = data.index.to_numpy()
+                ax.plot(dates, data['RSI_14'].values, label='RSI', linewidth=0.5)
+            else:
+                return "Информация о дате отсутствует или не имеет распознаваемого формата."
+        else:
+            if not pd.api.types.is_datetime64_any_dtype(data['Date']):
+                data['Date'] = pd.to_datetime(data['Date'])
+            ax.plot(data['Date'], data['RSI_14'].values, label='RSI', linewidth=0.5)
+        ax.set_ylabel("RSI")
+    except:
+        pass
+
+
+def create_any_chart(data: DataFrame, col_list: list, ax: plt.Axes):
+    """
+    Метод создает RSI график по данным
+    :param data: Объект класса DataFrame с данными для расчета.
+    :param col_list: Список колонок для вывода на график
+    :param ax: Объект Axes отдельного (вспомогательного) графика
+    :return: None | error
+    """
+    try:
+        if 'Date' not in data:
+            if pd.api.types.is_datetime64_any_dtype(data.index):
+                dates = data.index.to_numpy()
+                for i in col_list:
+                    ax.plot(dates, data[i].values, label=i, linewidth=0.5)
+            else:
+                return "Информация о дате отсутствует или не имеет распознаваемого формата."
+        else:
+            if not pd.api.types.is_datetime64_any_dtype(data['Date']):
+                data['Date'] = pd.to_datetime(data['Date'])
+            for i in col_list:
+                ax.plot(data['Date'], data[i].values, label=i, linewidth=0.5)
+        ax.legend()
+    except:
+        pass
+
+
+def create_MACD_chart(data: DataFrame, ax: plt.Axes):
+    """
+    Метод создает MACD график по данным
+    :param data: Объект класса DataFrame с данными для расчета.
+    :param ax: Объект Axes отдельного (вспомогательного) графика
+    :return: None | error
+    """
+    try:
+        data['positive'] = MACD_color(data)
+        if 'Date' not in data:
+            if pd.api.types.is_datetime64_any_dtype(data.index):
+                dates = data.index.to_numpy()
+                ax.plot(dates, data['MACD_12_26_9'].values, label='MACD', color='blue', linewidth=0.5)
+                ax.plot(dates, data['MACDs_12_26_9'].values, label='Signal', color='red', linewidth=0.5)
+                ax.bar(data.index, 'MACDh_12_26_9', data=data, label='Vol',
+                        color=data.positive.map({True: 'g', False: 'r'}), width=1, alpha=0.8)
+            else:
+                return "Информация о дате отсутствует или не имеет распознаваемого формата."
+        else:
+            if not pd.api.types.is_datetime64_any_dtype(data['Date']):
+                data['Date'] = pd.to_datetime(data['Date'])
+            ax.plot(data['Date'], data['MACD_12_26_9'].values, label='MACD', color='blue', linewidth=0.5)
+            ax.plot(data['Date'], data['MACDs_12_26_9'].values, label='Signal', color='red', linewidth=0.5)
+            ax.bar(data.index, 'MACDh_12_26_9', data=data, label='Vol',
+                    color=data.positive.map({True: 'g', False: 'r'}), width=1, alpha=0.8)
+        ax.axhline(0, color='black', linewidth=0.5, alpha=0.5)
+        ax.set_ylabel("MACD")
+        ax.legend()
+    except:
+        pass
+
+
+def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: str | None | bool = None,
+                         style='default', crises=True) -> str:
+    """
+    Метод создает 3 графика по данным и сохраняет их на диск
     :param data: Объект класса DataFrame с данными для расчета.
     :param ticker: Название тикета, может принимать значения ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA']
     :param period: Период предоставления данных:
@@ -74,74 +150,39 @@ def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: st
     :param filename: Имя файла для сохранения изображения с графиком, по умолчанию имя файла будет
                      формироваться автоматически
     :param style: Стиль графика.
+    :param crises: Флаг отметки на графике финансовых кризисов
     :return: Сообщение с результатом выполнения функции
     """
     plt.style.use(style)
     plt.figure(figsize=(8, 8))
+    fig = pylab.gcf()
+    fig.canvas.manager.set_window_title(f'Цена акций, RSI и MACD для {ticker} с отметками финансовых кризисов')
+    # plt.suptitle('figure title')
+
+    # Создать основной график
     ax1 = plt.subplot2grid(shape=(11, 10), loc=(0, 0), rowspan=5, colspan=10)
+    err = create_basic_chart(data=data, ticker=ticker, ax=ax1)
+    if err:
+        return err
+    dt_start_end = date_start_end(data)
+    if crises:
+        mark_financial_crises(ax1, *dt_start_end)
 
-    if 'Date' not in data:
-        if pd.api.types.is_datetime64_any_dtype(data.index):
-            dates = data.index.to_numpy()
-            ax1.plot(dates, data['Close'].values, label='Close Price')
-            ax1.plot(dates, data['Moving_Average'].values, label='Moving Average')
-        else:
-            return "Информация о дате отсутствует или не имеет распознаваемого формата."
-    else:
-        if not pd.api.types.is_datetime64_any_dtype(data['Date']):
-            data['Date'] = pd.to_datetime(data['Date'])
-        ax1.plot(data['Date'], data['Close'], label='Close Price')
-        ax1.plot(data['Date'], data['Moving_Average'], label='Moving Average')
+    # Создать RSI график
+    ax2 = plt.subplot2grid((11, 10), (5, 0), rowspan=3, colspan=10)
+    err = create_RSI_chart(data=data, ax=ax2)
+    if err:
+        return err
+    if crises:
+        mark_financial_crises(ax2, *dt_start_end)
 
-    ax1.set_title(f"{ticker} Цена акций с течением времени")
-    ax1.set_xlabel("Дата")
-    ax1.set_ylabel("Цена")
-    # ax1.grid()
-    ax1.legend()
-
-    try:
-        ax2 = plt.subplot2grid((11, 10), (5, 0), rowspan=3, colspan=10)
-        if 'Date' not in data:
-            if pd.api.types.is_datetime64_any_dtype(data.index):
-                dates = data.index.to_numpy()
-                ax2.plot(dates, data['RSI_14'].values, label='RSI', linewidth=0.5)
-            else:
-                return "Информация о дате отсутствует или не имеет распознаваемого формата."
-        else:
-            if not pd.api.types.is_datetime64_any_dtype(data['Date']):
-                data['Date'] = pd.to_datetime(data['Date'])
-            ax2.plot(data['Date'], data['RSI_14'].values, label='RSI', linewidth=0.5)
-        ax2.set_ylabel("RSI")
-        # ax2.grid()
-        # ax2.legend()
-    except:
-        pass
-
-    try:
-        ax3 = plt.subplot2grid((11, 10), (8, 0), rowspan=3, colspan=10)
-        data['positive'] = MACD_color(data)
-        if 'Date' not in data:
-            if pd.api.types.is_datetime64_any_dtype(data.index):
-                dates = data.index.to_numpy()
-                ax3.plot(dates, data['MACD_12_26_9'].values, label='MACD', color='blue', linewidth=0.5)
-                ax3.plot(dates, data['MACDs_12_26_9'].values, label='Signal', color='red', linewidth=0.5)
-                ax3.bar(data.index, 'MACDh_12_26_9', data=data, label='Vol',
-                        color=data.positive.map({True: 'g', False: 'r'}), width=1, alpha=0.8)
-            else:
-                return "Информация о дате отсутствует или не имеет распознаваемого формата."
-        else:
-            if not pd.api.types.is_datetime64_any_dtype(data['Date']):
-                data['Date'] = pd.to_datetime(data['Date'])
-            ax3.plot(data['Date'], data['MACD_12_26_9'].values, label='MACD', color='blue', linewidth=0.5)
-            ax3.plot(data['Date'], data['MACDs_12_26_9'].values, label='Signal', color='red', linewidth=0.5)
-            ax3.bar(data.index, 'MACDh_12_26_9', data=data, label='Vol',
-                    color=data.positive.map({True: 'g', False: 'r'}), width=1, alpha=0.8)
-        ax3.axhline(0, color='black', linewidth=0.5, alpha=0.5)
-        ax3.set_ylabel("MACD")
-        # ax3.grid()
-        ax3.legend()
-    except:
-        pass
+    # Создать MACD график
+    ax3 = plt.subplot2grid((11, 10), (8, 0), rowspan=3, colspan=10)
+    err = create_MACD_chart(data=data, ax=ax3)
+    if err:
+        return err
+    if crises:
+        mark_financial_crises(ax3, *dt_start_end)
 
     if filename is None:
         filename = f"{ticker}_{period}_stock_price_chart.png"
@@ -153,3 +194,41 @@ def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: st
     plt.tight_layout()
     plt.show()
     return msg
+
+
+def create_any_plot(data: DataFrame, col_list: list, ticker: str, style='default', crises=True) -> str:
+    """
+    Метод создает 3 графика по данным и сохраняет их на диск.
+    :param data: Объект класса DataFrame с данными для расчета.
+    :param col_list: Список столбцов для вывода на график.
+    :param ticker: Название тикета, может принимать значения ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA']
+    :param style: Стиль графика.
+    :param crises: Флаг отметки на графике финансовых кризисов
+    :return: Сообщение с результатом выполнения функции
+    """
+    plt.style.use(style)
+    plt.figure(figsize=(8, 8))
+    fig = pylab.gcf()
+    fig.canvas.manager.set_window_title(f'Цена акций и дополнительные индикаторы для {ticker} '
+                                        f'с отметками финансовых кризисов')
+    # plt.suptitle('figure title')
+
+    # Создать основной график
+    ax1 = plt.subplot2grid(shape=(11, 10), loc=(0, 0), rowspan=5, colspan=10)
+    err = create_basic_chart(data=data, ticker=ticker, ax=ax1)
+    if err:
+        return err
+    dt_start_end = date_start_end(data)
+    if crises:
+        mark_financial_crises(ax1, *dt_start_end)
+
+    # Создать график из списка столбцов
+    ax2 = plt.subplot2grid((11, 10), (5, 0), rowspan=6, colspan=10)
+    err = create_any_chart(data=data, col_list=col_list, ax=ax2)
+    if err:
+        return err
+    if crises:
+        mark_financial_crises(ax2, *dt_start_end)
+
+    plt.tight_layout()
+    plt.show()

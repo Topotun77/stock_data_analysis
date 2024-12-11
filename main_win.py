@@ -1,11 +1,14 @@
 import math
 import subprocess
 from functools import partial
-from PIL import Image, ImageTk
 from datetime import date
 
 import data_download as dd
 import data_plotting as dplt
+import data_export as dexp
+import data_processing as dp
+from utilities import image_to_icon
+
 import tkinter as tk
 from tkinter import ttk
 from tkinter.constants import *
@@ -14,22 +17,6 @@ from tkinter import messagebox as mb
 from tkinter import filedialog as fd
 from tkcalendar import DateEntry
 from pandas import DataFrame
-
-
-def image_to_icon(file: str, min_x=20, min_y=20) -> ImageTk.PhotoImage | None:
-    """
-    Изменение размера картинки для иконки.
-    :param file: Имя файла.
-    :param min_x: Размер по горизонтали.
-    :param min_y: Размер по вертикали.
-    :return: Объект ImageTk.PhotoImage.
-    """
-    try:
-        im = Image.open(file)
-        im = im.resize((min_x, min_y))
-    except:
-        return None
-    return ImageTk.PhotoImage(im)
 
 
 def query_data(ticker: str, period: str = PERIOD_DEFAULT, interval: str = INTERVAL_DEFAULT,
@@ -47,13 +34,19 @@ def query_data(ticker: str, period: str = PERIOD_DEFAULT, interval: str = INTERV
     """
     # Получить данных
     stock_data = dd.fetch_stock_data(ticker, period=period, interval=interval,
-                                     data_start=date_start, data_end=date_end)
+                                     date_start=date_start, date_end=date_end)
+
+    if type(stock_data) != DataFrame:
+        return stock_data
 
     # Добавить скользящее среднее значение к данным
     stock_data = dd.add_moving_average(stock_data)
 
     # Добавить дополнительные технические индикаторы: RSI и MACD
     stock_data = dd.add_rsi_macd(stock_data)
+
+    # Добавить дополнительные технические индикаторы: ATR
+    stock_data = dd.add_ATR(stock_data)
 
     return stock_data
 
@@ -62,16 +55,17 @@ class DateEntryNone(DateEntry):
     """
     Переопределяем методы для возможности ввода пустой даты
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.old_parse_date = self.parse_date
         self.parse_date = self.new_parse_date
-    
+
     def _validate_date(self):
         if not self.get():
             return True
         return super()._validate_date()
-    
+
     def new_parse_date(self, text):
         if not text:
             return date.today()
@@ -83,6 +77,7 @@ class Ticker:
     """
     Класс GUI со всеми элементами и методами окна
     """
+
     def __init__(self, win: tk.Tk):
         self.win = win
         self.win.option_add("*tearOff", FALSE)
@@ -107,7 +102,7 @@ class Ticker:
         try:
             self.win.iconbitmap(default="./Media/favicon.ico")
             # TODO Для компиляции с помощью auto-py-to-exe заменить строку выше на:
-            # self.win.iconbitmap(default=os.path.join(sys._MEIPASS, "./Media/favicon.ico"))
+            # self.win.iconbitmap(default=path.join(sys._MEIPASS, "./Media/favicon.ico"))
         except:
             pass
         screen_width = self.win.winfo_screenwidth()
@@ -189,14 +184,22 @@ class Ticker:
         style = list(filter(lambda x: "seaborn" in x, style_list))[0]
         self.style_entry.insert(0, style)
 
+        self.frame3 = tk.Frame(self.frame2)
+        self.frame3.grid(row=6, column=1)
         self.icon_chart = image_to_icon(ICON_CHART)
-        self.button_plot = tk.Button(self.frame2,
-                                     text=" Построить график ", #width=110, height=25,
+        self.button_plot = tk.Button(self.frame3,
+                                     text=" Основной график ",
                                      command=self.button_plot_click,
                                      image=self.icon_chart,
                                      compound=LEFT)
-        self.button_plot.grid(row=6, column=1, padx=5, pady=5)
-        # self.button_plot.bind('<Return>', self.button_plot_click)
+        self.button_plot.grid(row=0, column=0, padx=5, pady=5)
+
+        self.button_plot_2 = tk.Button(self.frame3,
+                                       text=" Дополнительный график ",
+                                       command=self.button_plot_click_2,
+                                       image=self.icon_chart,
+                                       compound=LEFT)
+        self.button_plot_2.grid(row=0, column=1, padx=5, pady=5)
 
         self.icon_mean = image_to_icon(ICON_CALC)
         self.button_mean = tk.Button(self.frame2,
@@ -267,8 +270,13 @@ class Ticker:
 
         if (ticker != self.ticker or period != self.period or interval != self.interval
                 or data_start != self.data_start or data_end != self.data_end):
+            # запрос данных здесь
             self.stock_data = query_data(ticker, period=period, interval=interval,
                                          date_start=data_start, date_end=data_end)
+            if type(self.stock_data) != DataFrame:
+                mb.showerror(str(self.stock_data))
+            if len(self.stock_data) == 0:
+                mb.showinfo(title='Предупреждение!', message='Нет данных за указанный период!')
             self.ticker, self.period, self.interval = ticker, period, interval
             self.data_start, self.data_end = self.data_start_entry.get_date(), self.data_end_entry.get_date()
             return True
@@ -300,7 +308,7 @@ class Ticker:
                               [round(i, 2) for i in self.stock_data.values[row]])
                 self.table.insert('', END, values=values)
             threshold = float(self.fluctuations_entry.get())
-            message = dplt.notify_if_strong_fluctuations(self.stock_data, threshold)
+            message = dp.notify_if_strong_fluctuations(self.stock_data, threshold)
             if message:
                 mb.showwarning('Предупреждение!!!', message)
 
@@ -319,7 +327,7 @@ class Ticker:
                 return
         else:
             filename = None
-        err = dplt.export_data_to_csv(self.stock_data, filename=filename, ticker=self.ticker)
+        err = dexp.export_data_to_csv(self.stock_data, filename=filename, ticker=self.ticker)
         if not err[0]:
             mb.showerror(title='Ошибка!', message=err[1])
         else:
@@ -338,6 +346,18 @@ class Ticker:
         if reply:
             mb.showinfo(message=reply, title='Инфо')
 
+    def button_plot_click_2(self):
+        """
+        Метод, вызываемый при нажатии на кнопку self.button_plot_2
+        Запрос данных и печать графика
+        """
+        self._set_table()
+        style = self.style_entry.get()
+        reply = dplt.create_any_plot(self.stock_data, col_list=['ATR', 'MACD_12_26_9', 'MACDs_12_26_9'],
+                                     ticker=self.ticker, style=style)
+        if reply:
+            mb.showinfo(message=reply, title='Инфо')
+
     def button_mean_click(self):
         """
         Метод, вызываемый при нажатии на кнопку button_mean
@@ -345,7 +365,7 @@ class Ticker:
         среднее на момент закрытия торгов
         """
         self._set_table()
-        mean_close = dplt.calculate_and_display_average_price(self.stock_data)
+        mean_close = dd.calculate_and_display_average_price(self.stock_data)
         if math.isnan(mean_close):
             mb.showerror('Ошибка!', 'Не удалось определить среднюю цену закрытия.')
         else:
