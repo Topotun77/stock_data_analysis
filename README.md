@@ -48,7 +48,7 @@
 ![img05](https://github.com/Topotun77/stock_data_analysis/blob/master/ScreenShots/n007.jpg?raw=true)
 ### Индикаторы ATR и MACD:
 ![img06](https://github.com/Topotun77/stock_data_analysis/blob/master/ScreenShots/n008.jpg?raw=true)
-### Другой сьиль оформления графика:
+### Другой стиль оформления графика:
 ![img07](https://github.com/Topotun77/stock_data_analysis/blob/master/ScreenShots/n009.jpg?raw=true)
 
 ### Консольный вывод приложения:

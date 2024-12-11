@@ -33,6 +33,7 @@ INTERVAL_NOT_TIME = ['1d', '5d', '1wk', '1mo', '3mo']
 
 # Список финансовых кризисов
 FINANCIAL_CRISIS_LIST = [
+    (date(2020, 3, 1), date(2022, 2, 1)),
     (date(2007, 12, 1), date(2009, 6, 1)),
     (date(2001, 3, 1), date(2001, 11, 1)),
     (date(1990, 8, 1), date(1991, 2, 1)),
