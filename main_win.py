@@ -198,13 +198,6 @@ class Ticker:
         self.data_end = None
         self.data_end_entry.delete(0, END)
 
-        self.button_mean = tk.Button(self.frame_right,
-                                     text=" Посчитать среднюю цену на закрытие ",
-                                     command=self.button_mean_click,
-                                     image=self.icon_mean,
-                                     compound=LEFT)
-        self.button_mean.grid(row=2, column=0, padx=5, pady=5, rowspan=1, columnspan=2)
-
         """ Левая панель 2 """
         self.frame_left_2 = tk.Frame(self.frame_general)
         self.frame_left_2.grid(row=1, column=0, pady=1)
@@ -219,6 +212,13 @@ class Ticker:
                                            validatecommand=(validate_digit_command, '%P'))
         self.fluctuations_entry.grid(row=0, column=1, padx=2, sticky=E)
         self.fluctuations_entry.insert(0, str(FLUCTUATIONS_DEFAULT))
+
+        self.button_mean = tk.Button(self.frame_left_2,
+                                     text=" Посчитать среднюю цену на закрытие ",
+                                     command=self.button_mean_click,
+                                     image=self.icon_mean,
+                                     compound=LEFT)
+        self.button_mean.grid(row=1, column=0, padx=5, pady=5, rowspan=1, columnspan=2)
 
         """ Правая панель 2 """
         self.frame_right_2 = tk.Frame(self.frame_general, relief=GROOVE, border=2)
@@ -372,7 +372,7 @@ class Ticker:
             self.col_list_to_inter_chart.remove(column)
         else:
             self.col_list_to_inter_chart.append(column)
-        self.lab12.configure(text=INTER_TEXT_LINE2 + '  '.join(self.col_list_to_inter_chart))
+        self.lab12.configure(text=INTER_TEXT_LINE2 + ',  '.join(self.col_list_to_inter_chart))
 
     def save_csv(self, file_dlg: bool = False):
         """
