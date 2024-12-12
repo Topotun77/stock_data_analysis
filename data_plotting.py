@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 import pandas as pd
 from matplotlib import pylab
 from pandas import DataFrame
@@ -157,7 +158,6 @@ def create_and_save_plot(data: DataFrame, ticker: str, period: str, filename: st
     plt.figure(figsize=(8, 8))
     fig = pylab.gcf()
     fig.canvas.manager.set_window_title(f'Цена акций, RSI и MACD для {ticker} с отметками финансовых кризисов')
-    # plt.suptitle('figure title')
 
     # Создать основной график
     ax1 = plt.subplot2grid(shape=(11, 10), loc=(0, 0), rowspan=5, colspan=10)
@@ -211,7 +211,6 @@ def create_any_plot(data: DataFrame, col_list: list, ticker: str, style='default
     fig = pylab.gcf()
     fig.canvas.manager.set_window_title(f'Цена акций и дополнительные индикаторы для {ticker} '
                                         f'с отметками финансовых кризисов')
-    # plt.suptitle('figure title')
 
     # Создать основной график
     ax1 = plt.subplot2grid(shape=(11, 10), loc=(0, 0), rowspan=5, colspan=10)
@@ -232,3 +231,26 @@ def create_any_plot(data: DataFrame, col_list: list, ticker: str, style='default
 
     plt.tight_layout()
     plt.show()
+
+
+def create_interactive_chart(data: DataFrame, ticker: str, col_list: list = None):
+    """
+    Создание интерактивного графика
+    :param data: Объект класса DataFrame с данными для расчета.
+    :param ticker: Название тикета, может принимать значения ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA']
+    :param col_list: Список столбцов, по которым следует строить график.
+    """
+    fig = go.Figure()
+    if not col_list:
+        fig.add_trace(go.Scatter(x=data.index, y=data['Open'],mode='lines', name='Цена открытия'))
+        fig.add_trace(go.Scatter(x=data.index, y=data['Close'],mode='lines', name='Цена закрытия'))
+        fig.add_trace(go.Scatter(x=data.index, y=data['High'],mode='lines', name='Максимальная цена'))
+        fig.add_trace(go.Scatter(x=data.index, y=data['Low'],mode='lines', name='Минимальная цена'))
+        fig.update_layout(title=f"{ticker} График цен",
+                          xaxis_title="Date", yaxis_title="Price", showlegend=True)
+    else:
+        for i in col_list:
+            fig.add_trace(go.Scatter(x=data.index, y=data[i], mode='lines', name=i))
+        fig.update_layout(title=f"{ticker} График по выбранным столбцам",
+                          xaxis_title="Date", showlegend=True)
+    fig.show()

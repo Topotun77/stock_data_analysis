@@ -1,7 +1,7 @@
 from PIL import ImageTk, Image
 
 
-def image_to_icon(file: str, min_x=20, min_y=20) -> ImageTk.PhotoImage | None:
+def image_to_icon(file: str, min_x=20, min_y=20):
     """
     Изменение размера картинки для иконки.
     :param file: Имя файла.

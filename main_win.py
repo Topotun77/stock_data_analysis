@@ -82,7 +82,13 @@ class Ticker:
         self.win = win
         self.win.option_add("*tearOff", FALSE)
 
+        """Список столбцов для интерактивного графика"""
+        self.col_list_to_inter_chart = []
+
         self.icon_save = image_to_icon(ICON_SAVE)
+        self.icon_chart = image_to_icon(ICON_CHART)
+        self.icon_mean = image_to_icon(ICON_CALC)
+
         self.file_menu = tk.Menu()
         self.file_menu.add_command(label=' Сохранить в CSV',
                                    command=self.save_csv,
@@ -93,8 +99,29 @@ class Ticker:
                                    image=self.icon_save,
                                    compound=LEFT)
 
+        self.menu_chart = tk.Menu()
+        self.menu_chart.add_command(label=' Основной график',
+                                    command=self.button_plot_click,
+                                    image=self.icon_chart,
+                                    compound=LEFT)
+        self.menu_chart.add_command(label=' Дополнительный график',
+                                    command=self.button_plot_click_2,
+                                    image=self.icon_chart,
+                                    compound=LEFT)
+        self.menu_chart.add_separator()
+        self.menu_chart.add_command(label=' Стандартный интерактивный график',
+                                    command=self.button_plot_inter_click,
+                                    image=self.icon_chart,
+                                    compound=LEFT)
+        self.menu_chart.add_command(label=' Интерактивный график по выбранным столбцам',
+                                    command=partial(self.button_plot_inter_click,
+                                                    self.col_list_to_inter_chart),
+                                    image=self.icon_chart,
+                                    compound=LEFT)
+
         self.main_menu = tk.Menu()
         self.main_menu.add_cascade(label='Файл', menu=self.file_menu)
+        self.main_menu.add_cascade(label='Построение графиков', menu=self.menu_chart)
         self.main_menu.add_command(label='О программе', command=self.show_info)
         # self.win.bind_all('<F1>', self.show_info)
 
@@ -113,104 +140,123 @@ class Ticker:
         self.win.minsize(700, 250)
         self.win.config(menu=self.main_menu)
 
-        self.frame2 = tk.Frame(self.win, padx=5, pady=5, relief=RIDGE, border=1)
-        self.frame2.pack(fill="both", expand=False)
-        self.frame2.columnconfigure(0, weight=1)
-        self.frame2.columnconfigure(1, weight=1)
+        self.frame_general = tk.Frame(self.win, padx=5, pady=5, border=1)
+        self.frame_general.pack(fill="both", expand=False)
+        self.frame_general.columnconfigure(0, weight=1)
         # self.frame2.rowconfigure(4, weight=1)
 
-        self.lab4 = tk.Label(self.frame2, text="Введите тикер акции (например, «AAPL» для Apple Inc):", justify=RIGHT)
+        """ Левая панель """
+        self.frame_left = tk.Frame(self.frame_general, border=1)
+        self.frame_left.grid(row=0, column=0, padx=5, pady=5)
+        self.frame_left.columnconfigure(1, weight=1)
+
+        self.lab4 = tk.Label(self.frame_left, text="Введите тикер акции:")
         self.lab4.grid(row=0, column=0, sticky=E)
 
-        self.lab5 = tk.Label(self.frame2, text="Введите период для данных:", justify=RIGHT)
+        self.lab5 = tk.Label(self.frame_left, text="Введите период для данных:")
         self.lab5.grid(row=1, column=0, sticky=E)
 
-        self.lab6 = tk.Label(self.frame2, text="Введите интервал для данных:", justify=RIGHT)
+        self.lab6 = tk.Label(self.frame_left, text="Введите интервал для данных:")
         self.lab6.grid(row=2, column=0, sticky=E)
 
-        self.lab7 = tk.Label(self.frame2, text="Введите значение порога колебания цены,\n"
-                                               "при котором следует уведомлять пользователя (в %):", justify=RIGHT)
-        self.lab7.grid(row=3, column=0, sticky=E)
-
-        self.lab8 = tk.Label(self.frame2, text="Дата начала периода:   ", justify=CENTER)
-        self.lab8.grid(row=4, column=0, sticky=E)
-
-        self.lab9 = tk.Label(self.frame2, text="   Дата окончания периода:", justify=CENTER)
-        self.lab9.grid(row=4, column=1, sticky=W)
-
-        self.tik_entry = ttk.Combobox(self.frame2, width=50, values=LIST_TIK)
-        self.tik_entry.grid(row=0, column=1, sticky=W, padx=2, pady=1)
+        self.tik_entry = ttk.Combobox(self.frame_left, width=25, values=LIST_TIK)
+        self.tik_entry.grid(row=0, column=1, sticky=W, padx=2, pady=3)
         self.tik_entry.bind("<<ComboboxSelected>>", self._set_table)
         self.ticker = TIK_DEFAULT
         self.tik_entry.insert(0, self.ticker)
 
-        self.period_entry = ttk.Combobox(self.frame2, width=50, values=LIST_PERIOD)
-        self.period_entry.grid(row=1, column=1, sticky=W, padx=2, pady=1)
+        self.period_entry = ttk.Combobox(self.frame_left, width=20, values=LIST_PERIOD)
+        self.period_entry.grid(row=1, column=1, sticky=W, padx=2, pady=3)
         self.period_entry.bind("<<ComboboxSelected>>", self._set_table)
         self.period = PERIOD_DEFAULT
         self.period_entry.insert(0, self.period)
 
-        self.interval_entry = ttk.Combobox(self.frame2, width=50, values=LIST_INTERVAL)
-        self.interval_entry.grid(row=2, column=1, sticky=W, padx=2, pady=1)
+        self.interval_entry = ttk.Combobox(self.frame_left, width=20, values=LIST_INTERVAL)
+        self.interval_entry.grid(row=2, column=1, sticky=W, padx=2, pady=3)
         self.interval_entry.bind("<<ComboboxSelected>>", self._set_table)
         self.interval = INTERVAL_DEFAULT
         self.interval_entry.insert(0, self.interval)
 
-        validate_digit_command = self.win.register(self._validate_digit_input)
-        self.fluctuations_entry = tk.Entry(self.frame2, width=10, validate='key',
-                                           validatecommand=(validate_digit_command, '%P'))
-        self.fluctuations_entry.grid(row=3, column=1, sticky=W, padx=2)
-        self.fluctuations_entry.insert(0, str(FLUCTUATIONS_DEFAULT))
+        """ Правая панель """
+        self.frame_right = tk.Frame(self.frame_general, border=2, relief=GROOVE)
+        self.frame_right.grid(row=0, column=1, sticky=EW, pady=2)
+        self.frame_right.columnconfigure(0, weight=1)
 
-        self.data_start_entry = DateEntryNone(self.frame2, borderwidth=2, date_pattern="dd-mm-y")
-        self.data_start_entry.grid(row=5, column=0, sticky=E, padx=20)
+        self.lab8 = tk.Label(self.frame_right, text="Дата начала периода:", justify=CENTER)
+        self.lab8.grid(row=0, column=0, sticky=E)
+        self.data_start_entry = DateEntryNone(self.frame_right, borderwidth=2, date_pattern="dd-mm-y")
+        self.data_start_entry.grid(row=0, column=1, padx=20, pady=3, sticky=W)
         self.data_start_entry.bind("<<DateEntrySelected>>", self._set_table)
         self.data_start = None
         self.data_start_entry.delete(0, END)
 
-        self.data_end_entry = DateEntryNone(self.frame2, borderwidth=2, date_pattern="dd-mm-y")
-        self.data_end_entry.grid(row=5, column=1, sticky=W, padx=20)
+        self.lab9 = tk.Label(self.frame_right, text="Дата окончания периода:", justify=CENTER)
+        self.lab9.grid(row=1, column=0, sticky=E)
+        self.data_end_entry = DateEntryNone(self.frame_right, borderwidth=2, date_pattern="dd-mm-y")
+        self.data_end_entry.grid(row=1, column=1, padx=20, pady=3, sticky=W)
         self.data_end_entry.bind("<<DateEntrySelected>>", self._set_table)
         self.data_end = None
         self.data_end_entry.delete(0, END)
 
-        self.frame1 = tk.Frame(self.frame2)
-        self.frame1.grid(row=6, column=0)
-        self.lab10 = tk.Label(self.frame1, text='Стиль графиков: ')
-        self.lab10.grid(row=0, column=0, sticky=W, padx=2, pady=1)
-        style_list = [x for x in plt.style.available if x[0] != '_']
-        self.style_entry = ttk.Combobox(self.frame1, width=35, values=style_list)
-        self.style_entry.grid(row=0, column=1, sticky=E, padx=2, pady=1)
-        style = list(filter(lambda x: "seaborn" in x, style_list))[0]
-        self.style_entry.insert(0, style)
-
-        self.frame3 = tk.Frame(self.frame2)
-        self.frame3.grid(row=6, column=1)
-        self.icon_chart = image_to_icon(ICON_CHART)
-        self.button_plot = tk.Button(self.frame3,
-                                     text=" Основной график ",
-                                     command=self.button_plot_click,
-                                     image=self.icon_chart,
-                                     compound=LEFT)
-        self.button_plot.grid(row=0, column=0, padx=5, pady=5)
-
-        self.button_plot_2 = tk.Button(self.frame3,
-                                       text=" Дополнительный график ",
-                                       command=self.button_plot_click_2,
-                                       image=self.icon_chart,
-                                       compound=LEFT)
-        self.button_plot_2.grid(row=0, column=1, padx=5, pady=5)
-
-        self.icon_mean = image_to_icon(ICON_CALC)
-        self.button_mean = tk.Button(self.frame2,
+        self.button_mean = tk.Button(self.frame_right,
                                      text=" Посчитать среднюю цену на закрытие ",
                                      command=self.button_mean_click,
                                      image=self.icon_mean,
                                      compound=LEFT)
-        self.button_mean.grid(row=3, column=1, padx=5, pady=5, sticky=E)
+        self.button_mean.grid(row=2, column=0, padx=5, pady=5, rowspan=1, columnspan=2)
+
+        """ Левая панель 2 """
+        self.frame_left_2 = tk.Frame(self.frame_general)
+        self.frame_left_2.grid(row=1, column=0, pady=1)
+        self.frame_left_2.columnconfigure(1, weight=1)
+
+        self.lab7 = tk.Label(self.frame_left_2, text="Значение порога колебания цены для \n"
+                                                     "уведомления пользователя (в %):")
+        self.lab7.grid(row=0, column=0, sticky=E, padx=5)
+
+        validate_digit_command = self.win.register(self._validate_digit_input)
+        self.fluctuations_entry = tk.Entry(self.frame_left_2, width=10, validate='key',
+                                           validatecommand=(validate_digit_command, '%P'))
+        self.fluctuations_entry.grid(row=0, column=1, padx=2, sticky=E)
+        self.fluctuations_entry.insert(0, str(FLUCTUATIONS_DEFAULT))
+
+        """ Правая панель 2 """
+        self.frame_right_2 = tk.Frame(self.frame_general, relief=GROOVE, border=2)
+        self.frame_right_2.grid(row=1, column=1, sticky=EW, pady=2)
+        self.frame_right_2.columnconfigure(1, weight=1)
+
+        self.lab10 = tk.Label(self.frame_right_2, text='Стиль графиков: ')
+        self.lab10.grid(row=0, column=0, sticky=E, padx=2, pady=1)
+        style_list = [x for x in plt.style.available if x[0] != '_']
+        self.style_entry = ttk.Combobox(self.frame_right_2, width=35, values=style_list)
+        self.style_entry.grid(row=0, column=1, sticky=W, padx=1, pady=3)
+        style = list(filter(lambda x: "seaborn" in x, style_list))[0]
+        self.style_entry.insert(0, style)
+
+        self.button_plot = tk.Button(self.frame_right_2,
+                                     text=" Основной график ",
+                                     command=self.button_plot_click,
+                                     image=self.icon_chart,
+                                     compound=LEFT)
+        self.button_plot.grid(row=1, column=0, padx=1, pady=5)
+
+        self.button_plot_2 = tk.Button(self.frame_right_2,
+                                       text=" Дополнительный график ",
+                                       command=self.button_plot_click_2,
+                                       image=self.icon_chart,
+                                       compound=LEFT)
+        self.button_plot_2.grid(row=1, column=1, padx=1, pady=5)
+
+        """ Средняя панель """
+        self.lab11 = tk.Label(self.frame_general, text=INTER_TEXT_LINE1, foreground='blue')
+        self.lab11.grid(row=7, column=0, rowspan=1, columnspan=2, sticky=W, padx=5)
+        self.lab12 = tk.Label(self.frame_general, text=INTER_TEXT_LINE2+'нет выбранных столбцов')
+        self.lab12.grid(row=8, column=0, rowspan=1, columnspan=2, sticky=W, padx=5)
 
         ticker = self.tik_entry.get().upper()
         period = self.period_entry.get()
+
+        """Запрос данных"""
         self.stock_data = query_data(ticker, period)
 
         self.table = ttk.Treeview(columns=['data'] + self.stock_data.columns.values, show="headings")
@@ -219,6 +265,7 @@ class Ticker:
         self.scrollbar = tk.Scrollbar(self.win, command=self.table.yview)
         self.table.configure(yscrollcommand=self.scrollbar.set)
         self.scrollbar.pack(side=RIGHT, fill=Y)
+        # self.table.bind('<Button-1>', self._change_column)
         self.table.pack(side=TOP, fill=BOTH, expand=True)
 
     def show_info(self):
@@ -295,7 +342,8 @@ class Ticker:
                 self.table.delete(i)
 
             for col in range(len(self.column_)):
-                self.table.heading(col, text=self.column_[col])
+                self.table.heading(col, text=self.column_[col],
+                                   command=partial(self._change_column, col))
                 self.table.column(col, width=20)
             for row in range(len(self.stock_data.values)):
                 if self.interval in INTERVAL_NOT_TIME:
@@ -311,6 +359,20 @@ class Ticker:
             message = dp.notify_if_strong_fluctuations(self.stock_data, threshold)
             if message:
                 mb.showwarning('Предупреждение!!!', message)
+
+    def _change_column(self, column: int):
+        """
+        Выбрать/удалить столбец в список выбранных
+        :param column: Номер столбца
+        """
+        if not column:
+            return
+        column = self.column_[column]
+        if column in self.col_list_to_inter_chart:
+            self.col_list_to_inter_chart.remove(column)
+        else:
+            self.col_list_to_inter_chart.append(column)
+        self.lab12.configure(text=INTER_TEXT_LINE2 + '  '.join(self.col_list_to_inter_chart))
 
     def save_csv(self, file_dlg: bool = False):
         """
@@ -357,6 +419,18 @@ class Ticker:
                                      ticker=self.ticker, style=style)
         if reply:
             mb.showinfo(message=reply, title='Инфо')
+
+    def button_plot_inter_click(self, col_list: list = None):
+        """
+        Метод, вызываемый при нажатии на кнопку self.button_plot_inter
+        Запрос данных и вывод интерактивного графика
+        """
+        if col_list == []:
+            mb.showinfo(title='Информация', message='Пожалуйста, выберите столбцы для визуализации.')
+        self._set_table()
+        reply = dplt.create_interactive_chart(self.stock_data, ticker=self.ticker, col_list=col_list)
+        if reply:
+            mb.showinfo(message=reply, title='Информация')
 
     def button_mean_click(self):
         """
