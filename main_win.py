@@ -146,7 +146,7 @@ class Ticker:
         # self.frame2.rowconfigure(4, weight=1)
 
         """ Левая панель """
-        self.frame_left = tk.Frame(self.frame_general, border=1)
+        self.frame_left = tk.Frame(self.frame_general)
         self.frame_left.grid(row=0, column=0, padx=5, pady=5)
         self.frame_left.columnconfigure(1, weight=1)
 
