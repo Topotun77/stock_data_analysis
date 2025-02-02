@@ -68,7 +68,7 @@
 ```
 pip install -r requirements.txt
 ```
-2. **Произведите все настройки в файле `constants.py`.**  
+2. **Произведите все настройки в файле [`constants.py`](https://github.com/Topotun77/stock_data_analysis/blob/master/constants.py).**  
 В файле настроек есть подробное описание каждой настройки.
 
 3. **Запустите приложение командой:**  
