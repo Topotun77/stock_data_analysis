@@ -17,7 +17,7 @@ ICON_SAVE = './Media/save.png'
 # ICON_CHART = path.join(sys._MEIPASS, './Media/chart.png')
 # ICON_SAVE = path.join(sys._MEIPASS, './Media/save.png')
 
-# Список и значение по умолчанию периодов для данных
+# Список и значение по умолчанию тикетов
 LIST_TIK = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'BTC-USD']
 TIK_DEFAULT = 'GOOGL'
 
